@@ -161,7 +161,7 @@ const R = {
   }
 };
 
-async function handle({ request }) {
+async function handle(request) {
   const u = new URL(request.url), p = u.pathname.replace(/\/+$/, '') || '/';
   let b = {};
   if (request.method === 'POST') { try { b = await request.json(); } catch { return J({ error: 'bad_json' }, 400); } }
@@ -169,6 +169,7 @@ async function handle({ request }) {
   if (!f) return J({ error: 'not_found' }, 404);
   try { return await f(b || {}, u); } catch (e) { return J({ error: 'server', detail: String(e && e.message || e) }, 500); }
 }
+
 router.options('/*', () => new Response(null, { status: 204, headers: CORS }));
-router.get('/*', handle);
-router.post('/*', handle);
+router.get('/*', async event => handle(event.request || event));
+router.post('/*', async event => handle(event.request || event));
