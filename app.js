@@ -1,9 +1,9 @@
 'use strict';
 /* StoreBD — WhatsApp Storefront & Booking SaaS. Backend: Puter.js (auth, kv, fs, hosting). */
 const CFG = {
-  SUPER_ADMINS: ['adnansite01@gmail.com', 'spotless_idea_906100'], // আপনার Puter ইউজারনেমটি এখানে যুক্ত করে দিন
-  BASE_URL: 'https://storebd.pages.dev',
-  WORKER_URL: 'https://storebd.puter.work',
+  SUPER_ADMINS: ['adnansite01@gmail.com'], // Puter email or username (lowercase) allowed into #super-admin
+  BASE_URL: 'https://pages.dev',            // public origin for shareable links and QR codes (a store's own custom domain overrides it)
+  WORKER_URL: 'https://wsb-api.puter.work', // URL printed by deploy.html after deploying worker.js
   RESERVED: ['registry', 'admin', 'home', 'dashboard', 'super-admin']
 };
 const $ = (s, r = document) => r.querySelector(s);
@@ -268,6 +268,7 @@ async function signIn() { try { await puter.auth.signIn(); return await getUser(
 ACT.start = async () => { const u = await signIn(); if (!u) return; S.user = u; const to = location.hash === '#super-admin' ? '#super-admin' : '#dashboard'; if (location.hash === to) go(); else location.hash = to; };
 ACT.out = async () => { try { await puter.auth.signOut(); } catch { } S = { tab: 'overview', pub: '' }; location.hash = '#home'; go(); };
 const gate = (msg) => `<div class="min-h-screen grid place-items-center p-6 text-center"><div><div class="text-4xl">💬</div><h1 class="text-2xl font-bold mt-3">${msg}</h1><button data-act="start" class="btn-dark mt-5">Sign in with Puter</button><div class="mt-3"><a href="#home" class="text-sm mut">Back to home</a></div></div></div>`;
+
 
 /* ---------- public store ---------- */
 async function loadStore(slug) {
