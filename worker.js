@@ -1,15 +1,25 @@
 /* StoreBD Backend Worker for Puter */
 const ADMIN_KEY = '__ADMIN_KEY__';
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': '*' };
-const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400'
+};
+
+const J = (o, s = 200) => new Response(JSON.stringify(o), { 
+  status: s, 
+  headers: { ...CORS, 'Content-Type': 'application/json' } 
+});
 
 async function handleRequest(request) {
-  const url = new URL(request.url);
-  const path = url.pathname;
-
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
   }
+
+  const url = new URL(request.url);
+  const path = url.pathname;
 
   let body = {};
   if (request.method === 'POST') {
@@ -79,5 +89,9 @@ async function handleRequest(request) {
 }
 
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request).catch(err => J({ error: 'server', detail: err.message }, 500)));
+  event.respondWith(
+    handleRequest(event.request).catch(err => 
+      J({ error: 'server', detail: err.message }, 500)
+    )
+  );
 });
