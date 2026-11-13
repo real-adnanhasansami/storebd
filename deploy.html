@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StoreBD — Deploy backend</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="https://js.puter.com/v2/"></script></head>
+<body style="display:grid;place-items:center;min-height:100vh;padding:1rem">
+<main class="card2" style="max-width:460px;width:100%;padding:1.5rem;display:grid;gap:.9rem">
+<h1 style="font-size:1.4rem;font-weight:700;margin:0">StoreBD: deploy the backend</h1>
+<p class="mut" style="margin:0;font-size:.9rem">Sign in to the Puter account that will own all platform data. This uploads <code>worker.js</code> and publishes it as a Puter Worker.</p>
+<label style="font-size:.85rem">Worker name<input id="n" class="inp" value="storebd" style="margin-top:.3rem"></label>
+<label style="font-size:.85rem">Admin key (keep it secret; you will enter it in Super Admin)<input id="k" class="inp" style="margin-top:.3rem"></label>
+<button id="go" class="btn-dark">Sign in and deploy</button>
+<pre id="out" style="white-space:pre-wrap;font-size:.82rem;margin:0"></pre>
+</main>
+<script>
+const $=s=>document.querySelector(s),out=m=>$('#out').textContent=m;
+const a=new Uint8Array(18);crypto.getRandomValues(a);$('#k').value=[...a].map(x=>x.toString(16).padStart(2,'0')).join('');
+$('#go').onclick=async()=>{
+  const name=$('#n').value.trim().toLowerCase(),key=$('#k').value.trim();
+  if(!/^[a-z0-9-]{3,40}$/.test(name)||key.length<16)return out('Use a worker name of letters, digits or dashes and an admin key of 16+ characters.');
+  try{
+    out('Signing in…');await puter.auth.signIn();
+    out('Uploading worker…');
+    const code=(await(await fetch('worker.js')).text()).replace('__ADMIN_KEY__',key);
+    await puter.fs.write('wsb-worker/worker.js',code,{overwrite:true,createMissingParents:true});
+    try{await puter.workers.delete(name)}catch{}
+    out('Publishing worker…');
+    const r=await puter.workers.create(name,'wsb-worker/worker.js');
+    const url=(r&&r.url)||`https://${name}.puter.work`;
+    out(`Done.\n\nWorker URL: ${url}\nAdmin key: ${key}\n\nNext: set CFG.WORKER_URL in app.js to this URL, commit, and keep the admin key somewhere safe.`);
+  }catch(e){out('Failed: '+(e&&e.message||JSON.stringify(e)))}
+};
+</script></body></html>
