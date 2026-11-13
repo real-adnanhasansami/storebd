@@ -1,9 +1,9 @@
 'use strict';
 /* StoreBD — WhatsApp Storefront & Booking SaaS. Backend: Puter.js (auth, kv, fs, hosting). */
 const CFG = {
-  SUPER_ADMINS: ['adnansite01@gmail.com'], // Puter email or username (lowercase) allowed into #super-admin
-  BASE_URL: 'https://storebd.pages.dev',            // public origin for shareable links and QR codes (a store's own custom domain overrides it)
-  WORKER_URL: 'https://storebd.puter.work', // URL printed by deploy.html after deploying worker.js
+  SUPER_ADMINS: ['adnansite01@gmail.com', 'spotless_idea_906100'], // আপনার Puter ইউজারনেমটি এখানে যুক্ত করে দিন
+  BASE_URL: 'https://storebd.pages.dev',
+  WORKER_URL: 'https://storebd.puter.work',
   RESERVED: ['registry', 'admin', 'home', 'dashboard', 'super-admin']
 };
 const $ = (s, r = document) => r.querySelector(s);
