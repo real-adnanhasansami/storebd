@@ -6,8 +6,9 @@ const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: 
 const parse = v => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } };
 const get = async k => { const v = await me.puter.kv.get(k); return v == null ? null : parse(v); };
 const set = (k, v) => me.puter.kv.set(k, JSON.stringify(v));
-const list = async p => { const r = await me.puter.kv.list(p, true); return (Array.isArray(r) ? r : (r.items || [])).map(x => ({ key: x.key, value: parse(x.value) })); };
-const keys = async p => { const r = await me.puter.kv.list(p); return (Array.isArray(r) ? r : (r.items || [])).map(x => typeof x === 'string' ? x : x.key); };
+const rows = async (p, rv) => { const r = await me.puter.kv.list(p.replace(/\*$/, ''), rv); return Array.isArray(r) ? r : (r && (r.items || r.keys)) || []; };
+const list = async p => (await rows(p, true)).map(x => ({ key: x.key, value: parse(x.value) }));
+const keys = async p => (await rows(p, false)).map(x => typeof x === 'string' ? x : x.key);
 
 const DEF = { platformName: 'StoreBD', banner: { on: false, text: '' }, freeLimit: 15, proLimit: 0, signups: true };
 const settings = async () => ({ ...DEF, ...(await get('settings') || {}) });
