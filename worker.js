@@ -1,23 +1,10 @@
-/* StoreBD backend — Puter Worker. Deploy with deploy.html (it injects ADMIN_KEY).
-   Data lives in the deployer's Puter kv via me.puter.kv. */
-const ADMIN_KEY = '__ADMIN_KEY__';
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': '*' };
-const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
-const parse = v => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } };
-const get = async k => { const v = await me.puter.kv.get(k); return v == null ? null : parse(v); };
-const set = (k, v) => me.puter.kv.set(k, JSON.stringify(v));
-const list = async p => { const r = await me.puter.kv.list(p, true); return (Array.isArray(r) ? r : (r.items || [])).map(x => ({ key: x.key, value: parse(x.value) })); };
-const keys = async p => { const r = await me.puter.kv.list(p); return (Array.isArray(r) ? r : (r.items || [])).map(x => typeof x === 'string' ? x : x.key); };
-
-const DEF = { platformName: 'StoreBD', banner: { on: false, text: '' }, freeLimit: 15, proLimit: 0, signups: true };
-const settings = async () => ({ ...DEF, ...(await get('settings') || {}) });
+..DEF, ...(await get('settings') || {}) });
 const RESERVED = ['registry', 'admin', 'home', 'dashboard', 'super-admin', 'api'];
 const slugOk = s => typeof s === 'string' && /^[a-z0-9-]{3,30}$/.test(s) && !RESERVED.includes(s);
 const str = (v, n) => String(v ?? '').slice(0, n);
 const admin = b => ADMIN_KEY !== '__ADMIN_KEY__' && b.adminKey === ADMIN_KEY;
 const orderKey = (slug, ts, id) => `order:${slug}:${String(Math.floor(+ts) || 0).padStart(14, '0')}:${String(id).replace(/[^A-Za-z0-9]/g, '')}`;
 
-// Keep only the public fields of a store snapshot (never store ownerKey/status/tier from clients).
 function clean(s) {
   const c = { ...s };
   delete c.ownerKey; delete c.status; delete c.tier;
@@ -32,9 +19,7 @@ async function owner(b) {
 
 const R = {
   '/ping': async () => J({ ok: true }),
-
   '/settings': async () => J(await settings()),
-
   '/store': async (b, u) => {
     const slug = u.searchParams.get('slug'), meta = await get('reg:' + slug);
     if (!meta) return J({ error: 'not_found' }, 404);
@@ -43,13 +28,11 @@ const R = {
     const snap = await get('snap:' + slug);
     return J({ store: { ...snap, tier: meta.tier }, settings: set_ });
   },
-
   '/view': async b => {
     if (!slugOk(b.slug) || !(await get('reg:' + b.slug))) return J({ error: 'not_found' }, 404);
     await me.puter.kv.incr('views:' + b.slug, 1);
     return J({ ok: true });
   },
-
   '/order': async b => {
     const meta = await get('reg:' + b.slug), o = b.order || {};
     if (!meta) return J({ error: 'not_found' }, 404);
@@ -64,7 +47,6 @@ const R = {
     await set(orderKey(b.slug, c.ts, c.id), c);
     return J({ ok: true, ts: c.ts });
   },
-
   '/register': async b => {
     const s = await settings();
     if (!s.signups) return J({ error: 'signups_closed' }, 403);
@@ -76,12 +58,10 @@ const R = {
     await set('snap:' + b.slug, { ...st, slug: b.slug });
     return J({ ok: true });
   },
-
   '/m-get': async b => {
     const [meta, err] = await owner(b); if (err) return err;
     return J({ store: await get('snap:' + b.slug), tier: meta.tier, status: meta.status, settings: await settings() });
   },
-
   '/m-sync': async b => {
     const [meta, err] = await owner(b); if (err) return err;
     if (!b.store) return J({ error: 'bad_request' }, 400);
@@ -90,13 +70,11 @@ const R = {
     await set('reg:' + b.slug, { ...meta, name: str(st.name, 80), mode: st.mode, wa: str(st.wa, 20) });
     return J({ ok: true });
   },
-
   '/m-orders': async b => {
     const [, err] = await owner(b); if (err) return err;
     const rows = (await list(`order:${b.slug}:*`)).map(x => x.value).filter(Boolean).sort((x, y) => y.ts - x.ts);
     return J({ orders: rows, views: +(await get('views:' + b.slug)) || 0 });
   },
-
   '/m-status': async b => {
     const [, err] = await owner(b); if (err) return err;
     if (!['Pending', 'Confirmed', 'Completed', 'Cancelled'].includes(b.status)) return J({ error: 'bad_status' }, 400);
@@ -105,9 +83,7 @@ const R = {
     await set(k, { ...o, status: b.status });
     return J({ ok: true });
   },
-
   '/a-check': async b => admin(b) ? J({ ok: true }) : J({ error: 'forbidden' }, 403),
-
   '/a-stores': async b => {
     if (!admin(b)) return J({ error: 'forbidden' }, 403);
     const metas = (await list('reg:*')).map(x => x.value).filter(Boolean);
@@ -123,7 +99,6 @@ const R = {
     const stores = metas.map(({ ownerKey, ...m }) => ({ ...m, orders: (stat[m.slug] || {}).orders || 0, revenue: (stat[m.slug] || {}).revenue || 0, views: views[m.slug] || 0 }));
     return J({ stores, settings: await settings() });
   },
-
   '/a-update': async b => {
     if (!admin(b)) return J({ error: 'forbidden' }, 403);
     const meta = await get('reg:' + b.slug), snap = await get('snap:' + b.slug), p = b.patch || {};
@@ -138,14 +113,12 @@ const R = {
     await set('reg:' + b.slug, meta); await set('snap:' + b.slug, sn);
     return J({ ok: true });
   },
-
   '/a-delete': async b => {
     if (!admin(b)) return J({ error: 'forbidden' }, 403);
     const ks = [`reg:${b.slug}`, `snap:${b.slug}`, `views:${b.slug}`, ...(await keys(`order:${b.slug}:*`))];
     for (const k of ks) await me.puter.kv.del(k);
     return J({ ok: true });
   },
-
   '/a-settings': async b => {
     if (!admin(b)) return J({ error: 'forbidden' }, 403);
     const s = b.settings || {};
@@ -161,7 +134,7 @@ const R = {
   }
 };
 
-async function handle(request) {
+async function handle({ request }) {
   const u = new URL(request.url), p = u.pathname.replace(/\/+$/, '') || '/';
   let b = {};
   if (request.method === 'POST') { try { b = await request.json(); } catch { return J({ error: 'bad_json' }, 400); } }
@@ -169,7 +142,6 @@ async function handle(request) {
   if (!f) return J({ error: 'not_found' }, 404);
   try { return await f(b || {}, u); } catch (e) { return J({ error: 'server', detail: String(e && e.message || e) }, 500); }
 }
-
 router.options('/*', () => new Response(null, { status: 204, headers: CORS }));
-router.get('/*', async event => handle(event.request || event));
-router.post('/*', async event => handle(event.request || event));
+router.get('/*', handle);
+router.post('/*', handle);
