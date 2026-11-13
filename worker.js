@@ -1,6 +1,6 @@
 /* StoreBD backend — Puter Worker. Deploy with deploy.html (it injects ADMIN_KEY).
    Data lives in the deployer's Puter kv via me.puter.kv. */
-const ADMIN_KEY = '__ADMIN_KEY__';
+const ADMIN_KEY = 83f952a231153b581690d16d69c0a959d8d6';
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': '*' };
 const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
 const parse = v => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } };
