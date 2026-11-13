@@ -1,9 +1,9 @@
 'use strict';
 /* StoreBD — WhatsApp Storefront & Booking SaaS. Backend: Puter.js (auth, kv, fs, hosting). */
 const CFG = {
-  SUPER_ADMINS: ['adnansite01@gmail.com', 'spotless_idea_906100'], // এখানে আপনার ইউজারনেমটি বসিয়ে দিন
-  BASE_URL: 'https://storebd.pages.dev',
-  WORKER_URL: 'https://storebd.puter.work',
+  SUPER_ADMINS: ['adnansite01@gmail.com', 'spotless_idea_906100'], // Puter email or username (lowercase) allowed into #super-admin
+  BASE_URL: 'https://storebd.pages.dev',          // public origin for shareable links and QR codes (a store's own custom domain overrides it)
+  WORKER_URL: 'https://storebd.puter.work', // URL printed by deploy.html after deploying worker.js
   RESERVED: ['registry', 'admin', 'home', 'dashboard', 'super-admin']
 };
 const $ = (s, r = document) => r.querySelector(s);
@@ -49,7 +49,7 @@ async function api(path, body) {
   const j = body ? JSON.stringify(body) : '';
   const r = await fetch(CFG.WORKER_URL + path, body ? { method: 'POST', body: j, headers: { 'Content-Type': 'text/plain' }, keepalive: j.length < 60000 } : {});
   let d = {}; try { d = await r.json(); } catch { }
-  if (!r.ok) throw Object.assign(new Error(d.error || 'request failed'), { code: d.error });
+  if (!r.ok) throw Object.assign(new Error(d.error || 'request failed'), { code: d.error, detail: d.detail });
   return d;
 }
 const loadSettings = async () => { try { Object.assign(SET, await api('/settings')); } catch { } };
@@ -504,7 +504,7 @@ async function superAdmin() {
 }
 function keyGate(e) {
   document.title = 'Super admin';
-  app(`<div class="min-h-screen grid place-items-center p-6"><form id="kf" class="card2 p-6 w-full max-w-sm grid gap-3"><h1 class="text-xl font-bold">Enter your admin key</h1><p class="mut text-sm">${e.code === 'forbidden' ? 'This is the key you chose in deploy.html.' : 'Backend unreachable. Check WORKER_URL in app.js and that the worker is deployed.'}</p><input name="k" type="password" class="inp" placeholder="Admin key" required><button class="btn-dark">Unlock</button><a href="#home" class="text-sm mut text-center">Back home</a></form></div>`);
+  app(`<div class="min-h-screen grid place-items-center p-6"><form id="kf" class="card2 p-6 w-full max-w-sm grid gap-3"><h1 class="text-xl font-bold">Enter your admin key</h1><p class="mut text-sm">${e.code === 'forbidden' ? 'This is the key you chose in deploy.html.' : e.code === 'server' ? 'Worker error: ' + esc(e.detail || 'unknown') : 'Backend unreachable. Check WORKER_URL in app.js and that the worker is deployed.'}</p><input name="k" type="password" class="inp" placeholder="Admin key" required><button class="btn-dark">Unlock</button><a href="#home" class="text-sm mut text-center">Back home</a></form></div>`);
   $('#kf').onsubmit = ev => { ev.preventDefault(); try { localStorage.setItem('wsb_admin_key', new FormData(ev.target).get('k').trim()); } catch { } superAdmin(); };
 }
 async function saLoad() {
