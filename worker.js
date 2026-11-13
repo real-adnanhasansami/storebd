@@ -3,8 +3,8 @@ const ADMIN_KEY = '__ADMIN_KEY__';
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': '*' };
 const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-export default {
-  async fetch(request) {
+puter.handlers.all(async (request) => {
+  try {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -26,7 +26,7 @@ export default {
     }
 
     if (path === '/settings') {
-      const s = await kv.get('settings');
+      const s = await puter.kv.get('settings');
       return J(s ? JSON.parse(s) : { platformName: 'StoreBD', freeLimit: 15, signups: true });
     }
 
@@ -34,7 +34,7 @@ export default {
       if (!body.slug || !body.ownerKey || !body.store) {
         return J({ error: 'bad_request' }, 400);
       }
-      const existing = await kv.get('reg:' + body.slug);
+      const existing = await puter.kv.get('reg:' + body.slug);
       if (existing) {
         return J({ error: 'taken' }, 409);
       }
@@ -48,26 +48,26 @@ export default {
         ownerKey: body.ownerKey,
         createdAt: Date.now()
       };
-      await kv.set('reg:' + body.slug, JSON.stringify(meta));
-      await kv.set('snap:' + body.slug, JSON.stringify(body.store));
+      await puter.kv.set('reg:' + body.slug, JSON.stringify(meta));
+      await puter.kv.set('snap:' + body.slug, JSON.stringify(body.store));
       return J({ ok: true });
     }
 
     if (path === '/store') {
       const slug = url.searchParams.get('slug');
-      const metaStr = await kv.get('reg:' + slug);
+      const metaStr = await puter.kv.get('reg:' + slug);
       if (!metaStr) return J({ error: 'not_found' }, 404);
       const meta = JSON.parse(metaStr);
       if (meta.status === 'suspended') return J({ suspended: true, name: meta.name });
-      const storeStr = await kv.get('snap:' + slug);
+      const storeStr = await puter.kv.get('snap:' + slug);
       return J({ store: { ...JSON.parse(storeStr), tier: meta.tier } });
     }
 
     if (path === '/order') {
-      const metaStr = await kv.get('reg:' + body.slug);
+      const metaStr = await puter.kv.get('reg:' + body.slug);
       if (!metaStr) return J({ error: 'not_found' }, 404);
       const orderKey = `order:${body.slug}:${Date.now()}`;
-      await kv.set(orderKey, JSON.stringify(body.order));
+      await puter.kv.set(orderKey, JSON.stringify(body.order));
       return J({ ok: true });
     }
 
@@ -77,5 +77,7 @@ export default {
     }
 
     return J({ error: 'not_found' }, 404);
+  } catch (err) {
+    return J({ error: 'server', detail: err.message }, 500);
   }
-};
+});
