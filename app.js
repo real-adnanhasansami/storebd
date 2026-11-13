@@ -3,7 +3,7 @@
 const CFG = {
   SUPER_ADMINS: ['learn369official@gmail.com', 'spotless_idea_906100'], // Puter email or username (lowercase) allowed into #super-admin
   BASE_URL: 'https://storebd.pages.dev',            // public origin for shareable links and QR codes (a store's own custom domain overrides it)
-  WORKER_URL: 'https://storebd.puter.work/', // URL printed by deploy.html after deploying worker.js
+  WORKER_URL: 'https://storebd.puter.work', // URL printed by deploy.html after deploying worker.js
   RESERVED: ['registry', 'admin', 'home', 'dashboard', 'super-admin']
 };
 const $ = (s, r = document) => r.querySelector(s);
