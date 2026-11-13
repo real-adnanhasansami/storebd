@@ -1,3 +1,4 @@
+'use strict';
 /* StoreBD — WhatsApp Storefront & Booking SaaS. Backend: Puter.js (auth, kv, fs, hosting). */
 const CFG = {
   SUPER_ADMINS: ['adnansite01@gmail.com'], // Puter email or username (lowercase) allowed into #super-admin
